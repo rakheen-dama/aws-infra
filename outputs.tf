@@ -72,15 +72,6 @@ output "redis_sg_id" {
 }
 
 # -----------------------------------------------------------------------------
-# ECR
-# -----------------------------------------------------------------------------
-
-output "ecr_repository_urls" {
-  description = "Map of service name to ECR repository URL"
-  value       = module.ecr.ecr_repository_urls
-}
-
-# -----------------------------------------------------------------------------
 # ALB
 # -----------------------------------------------------------------------------
 
@@ -134,15 +125,6 @@ output "cloud_map_namespace_id" {
 }
 
 # -----------------------------------------------------------------------------
-# S3
-# -----------------------------------------------------------------------------
-
-output "s3_bucket_name" {
-  description = "Name of the S3 bucket"
-  value       = module.s3.bucket_name
-}
-
-# -----------------------------------------------------------------------------
 # DNS
 # -----------------------------------------------------------------------------
 
@@ -192,30 +174,6 @@ output "redis_port" {
 output "redis_auth_token_secret_arn" {
   description = "ARN of the Redis auth token secret in Secrets Manager"
   value       = module.data.redis_auth_token_secret_arn
-}
-
-# -----------------------------------------------------------------------------
-# IAM
-# -----------------------------------------------------------------------------
-
-output "gateway_task_role_arn" {
-  description = "ARN of the gateway ECS task role"
-  value       = module.iam.gateway_task_role_arn
-}
-
-output "portal_task_role_arn" {
-  description = "ARN of the portal ECS task role"
-  value       = module.iam.portal_task_role_arn
-}
-
-output "keycloak_task_role_arn" {
-  description = "ARN of the keycloak ECS task role"
-  value       = module.iam.keycloak_task_role_arn
-}
-
-output "github_actions_role_arn" {
-  description = "ARN of the GitHub Actions IAM role (used in CI/CD workflows)"
-  value       = module.iam.github_actions_role_arn
 }
 
 output "bastion_instance_id" {

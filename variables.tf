@@ -125,33 +125,33 @@ variable "create_redis" {
 # -----------------------------------------------------------------------------
 
 variable "frontend_image" {
-  description = "Frontend ECR image URI with tag"
+  description = "Override for the frontend container image. Empty = ECR kazi/frontend with the environment's conventional tag (seeded via the seed-images workflow)."
   type        = string
-  default     = "public.ecr.aws/nginx/nginx:latest"
+  default     = ""
 }
 
 variable "backend_image" {
-  description = "Backend ECR image URI with tag"
+  description = "Override for the backend container image. Empty = ECR kazi/backend with the environment's conventional tag (seeded via the seed-images workflow)."
   type        = string
-  default     = "public.ecr.aws/nginx/nginx:latest"
+  default     = ""
 }
 
 variable "gateway_image" {
-  description = "Gateway ECR image URI with tag"
+  description = "Override for the gateway container image. Empty = ECR kazi/gateway with the environment's conventional tag (seeded via the seed-images workflow)."
   type        = string
-  default     = "public.ecr.aws/nginx/nginx:latest"
+  default     = ""
 }
 
 variable "portal_image" {
-  description = "Portal ECR image URI with tag"
+  description = "Override for the portal container image. Empty = ECR kazi/portal with the environment's conventional tag (seeded via the seed-images workflow)."
   type        = string
-  default     = "public.ecr.aws/nginx/nginx:latest"
+  default     = ""
 }
 
 variable "keycloak_image" {
-  description = "Keycloak ECR image URI with tag"
+  description = "Override for the keycloak container image. Empty = ECR kazi/keycloak with the environment's conventional tag (seeded via the seed-images workflow)."
   type        = string
-  default     = "public.ecr.aws/nginx/nginx:latest"
+  default     = ""
 }
 
 variable "keycloak_realm" {
@@ -232,16 +232,6 @@ variable "alert_email" {
 }
 
 # -----------------------------------------------------------------------------
-# Secrets
-# -----------------------------------------------------------------------------
-
-variable "secrets_recovery_window" {
-  description = "Secrets Manager recovery window in days (0 for immediate, 7-30 for production)"
-  type        = number
-  default     = 7
-}
-
-# -----------------------------------------------------------------------------
 # Auto Scaling
 # -----------------------------------------------------------------------------
 
@@ -255,38 +245,6 @@ variable "autoscaling_max_capacity" {
   description = "Maximum number of tasks per ECS service"
   type        = number
   default     = 10
-}
-
-# -----------------------------------------------------------------------------
-# GitHub OIDC
-# -----------------------------------------------------------------------------
-
-variable "github_repo" {
-  description = "Primary GitHub repository in OWNER/REPO format for OIDC trust policy"
-  type        = string
-  default     = "rakheen-dama/kazi"
-}
-
-variable "github_repos" {
-  description = "Additional GitHub repos allowed to assume the OIDC role (e.g., keycloak-saas)"
-  type        = list(string)
-  default     = ["rakheen-dama/keycloak-saas"]
-}
-
-# -----------------------------------------------------------------------------
-# Terraform State (for GitHub Actions IAM policy)
-# -----------------------------------------------------------------------------
-
-variable "terraform_state_bucket_name" {
-  description = "Name of the S3 bucket used for Terraform state"
-  type        = string
-  default     = "binarymash-terraform-state"
-}
-
-variable "terraform_lock_table_name" {
-  description = "Name of the DynamoDB table used for Terraform state locking"
-  type        = string
-  default     = "binarymash-terraform-locks"
 }
 
 variable "use_fargate_spot" {
@@ -362,4 +320,10 @@ variable "mailpit_image" {
   description = "Mailpit container image (capture mode)"
   type        = string
   default     = "axllent/mailpit:v1.30"
+}
+
+variable "rds_restore_snapshot_identifier" {
+  description = "Restore RDS from this snapshot at creation (env-up.sh passes the last final snapshot). Empty = fresh database."
+  type        = string
+  default     = ""
 }

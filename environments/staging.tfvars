@@ -12,18 +12,13 @@ public_subnet_cidrs  = ["10.1.1.0/24", "10.1.2.0/24"]
 private_subnet_cidrs = ["10.1.10.0/24", "10.1.20.0/24"]
 nat_gateway_count    = 1 # single NAT for staging (~$40/mo saving); production default is 2
 
-# Container images — updated by CI/CD pipeline
-frontend_image = "public.ecr.aws/nginx/nginx:latest"
-backend_image  = "public.ecr.aws/nginx/nginx:latest"
-gateway_image  = "public.ecr.aws/nginx/nginx:latest"
-portal_image   = "public.ecr.aws/nginx/nginx:latest"
-keycloak_image = "public.ecr.aws/nginx/nginx:latest"
+# Container images: defaults resolve to ECR kazi/<svc> with this environment's
+# tag (seed them first via the seed-images workflow). Set *_image to override.
 
-# DNS — hosted_zone_id: fill from `aws route53 list-hosted-zones-by-name --dns-name heykazi.com`
-# before the first terraform apply (manual step B3 in the deployment plan)
+# DNS
 create_dns     = true
 domain_name    = "heykazi.com"
-hosted_zone_id = ""
+hosted_zone_id = "Z09699881RA35D5R3WUQV"
 
 # ALB Routing Domains
 app_domain    = "staging-app.heykazi.com"
@@ -36,9 +31,6 @@ alb_deletion_protection = false
 # Monitoring
 log_retention_days = 30
 alert_email        = "founder@heykazi.com"
-
-# Secrets
-secrets_recovery_window = 7
 
 # Auto Scaling
 autoscaling_min_capacity = 1
@@ -55,16 +47,13 @@ create_bastion = true
 # then re-run the Keycloak realm SMTP bootstrap step with SES values.
 email_mode = "capture"
 
-# RDS
+# RDS — the final snapshot is what makes env-down/env-up cycles lossless:
+# destroy writes kazi-staging-postgres-final, bring-up restores from it.
 rds_instance_class      = "db.t4g.micro"
 rds_multi_az            = false
 rds_backup_retention    = 1
 rds_deletion_protection = false
-rds_skip_final_snapshot = true
+rds_skip_final_snapshot = false
 
 # Redis
 redis_node_type = "cache.t4g.micro"
-
-# GitHub OIDC
-github_repo               = "rakheen-dama/b2b-strawman"
-terraform_lock_table_name = "binarymash-terraform-locks"

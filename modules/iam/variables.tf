@@ -49,30 +49,6 @@ variable "keycloak_log_group_arn" {
   type        = string
 }
 
-variable "github_repo" {
-  description = "GitHub repository in OWNER/REPO format for OIDC trust policy (e.g. b2mash/kazi). Used as single-repo fallback; prefer github_repos for multi-repo setups."
-  type        = string
-  default     = ""
-}
-
-variable "github_repos" {
-  description = "List of GitHub repos allowed to assume the OIDC role (OWNER/REPO format). Combined with github_repo if both are set."
-  type        = list(string)
-  default     = []
-}
-
-variable "terraform_state_bucket_name" {
-  description = "Name of the S3 bucket used for Terraform state (for GitHub Actions policy)"
-  type        = string
-  default     = "binarymash-terraform-state"
-}
-
-variable "terraform_lock_table_name" {
-  description = "Name of the DynamoDB table used for Terraform state locking (ARN constructed from data sources)"
-  type        = string
-  default     = "binarymash-terraform-locks"
-}
-
 variable "mailpit_log_group_arn" {
   description = "ARN of the Mailpit log group"
   type        = string

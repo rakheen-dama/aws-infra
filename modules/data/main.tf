@@ -56,6 +56,11 @@ resource "aws_db_instance" "main" {
 
   db_name = var.project
 
+  # Restore from the previous cycle's final snapshot when env-up.sh passes it.
+  # ignore_changes keeps later applies (without the var) from replacing the
+  # instance — snapshot_identifier is create-time-only.
+  snapshot_identifier = var.rds_restore_snapshot_identifier != "" ? var.rds_restore_snapshot_identifier : null
+
   storage_type          = "gp3"
   allocated_storage     = var.rds_storage_gb
   max_allocated_storage = var.rds_max_storage_gb
@@ -79,6 +84,10 @@ resource "aws_db_instance" "main" {
   performance_insights_retention_period = 7
 
   enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
+
+  lifecycle {
+    ignore_changes = [snapshot_identifier]
+  }
 
   tags = {
     Name        = "${var.project}-${var.environment}-postgres"

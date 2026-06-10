@@ -60,23 +60,14 @@ module "data" {
   rds_deletion_protection = var.rds_deletion_protection
   rds_skip_final_snapshot = var.rds_skip_final_snapshot
 
+  rds_restore_snapshot_identifier = var.rds_restore_snapshot_identifier
+
   # Redis Configuration
   redis_sg_id                 = module.security_groups.redis_sg_id
   redis_node_type             = var.redis_node_type
   redis_engine_version        = var.redis_engine_version
   create_redis                = var.create_redis
-  redis_auth_token_secret_arn = module.secrets.redis_auth_token_arn
-}
-
-# -----------------------------------------------------------------------------
-# ECR Repositories
-# -----------------------------------------------------------------------------
-
-module "ecr" {
-  source = "./modules/ecr"
-
-  project     = var.project
-  environment = var.environment
+  redis_auth_token_secret_arn = data.aws_secretsmanager_secret.persistent["redis-auth-token"].arn
 }
 
 # -----------------------------------------------------------------------------
@@ -106,50 +97,23 @@ module "monitoring" {
 }
 
 # -----------------------------------------------------------------------------
-# S3 Bucket
-# -----------------------------------------------------------------------------
-
-module "s3" {
-  source = "./modules/s3"
-
-  project     = var.project
-  environment = var.environment
-}
-
-# -----------------------------------------------------------------------------
-# Secrets Manager
-# -----------------------------------------------------------------------------
-
-module "secrets" {
-  source = "./modules/secrets"
-
-  project                 = var.project
-  environment             = var.environment
-  recovery_window_in_days = var.secrets_recovery_window
-}
-
-# -----------------------------------------------------------------------------
 # IAM Roles
 # -----------------------------------------------------------------------------
 
 module "iam" {
   source = "./modules/iam"
 
-  project                     = var.project
-  environment                 = var.environment
-  ecr_repo_arns               = values(module.ecr.ecr_repository_arns)
-  s3_bucket_arn               = module.s3.bucket_arn
-  secret_arns                 = values(module.secrets.secret_arns)
-  frontend_log_group_arn      = module.monitoring.frontend_log_group_arn
-  backend_log_group_arn       = module.monitoring.backend_log_group_arn
-  gateway_log_group_arn       = module.monitoring.gateway_log_group_arn
-  portal_log_group_arn        = module.monitoring.portal_log_group_arn
-  keycloak_log_group_arn      = module.monitoring.keycloak_log_group_arn
-  mailpit_log_group_arn       = module.monitoring.mailpit_log_group_arn
-  github_repo                 = var.github_repo
-  github_repos                = var.github_repos
-  terraform_state_bucket_name = var.terraform_state_bucket_name
-  terraform_lock_table_name   = var.terraform_lock_table_name
+  project                = var.project
+  environment            = var.environment
+  ecr_repo_arns          = local.ecr_repo_arns
+  s3_bucket_arn          = local.s3_bucket_arn
+  secret_arns            = [for s in data.aws_secretsmanager_secret.persistent : s.arn]
+  frontend_log_group_arn = module.monitoring.frontend_log_group_arn
+  backend_log_group_arn  = module.monitoring.backend_log_group_arn
+  gateway_log_group_arn  = module.monitoring.gateway_log_group_arn
+  portal_log_group_arn   = module.monitoring.portal_log_group_arn
+  keycloak_log_group_arn = module.monitoring.keycloak_log_group_arn
+  mailpit_log_group_arn  = module.monitoring.mailpit_log_group_arn
 }
 
 # -----------------------------------------------------------------------------
@@ -238,11 +202,11 @@ module "ecs" {
   keycloak_task_role_arn = module.iam.keycloak_task_role_arn
 
   # Container Images
-  frontend_image = var.frontend_image
-  backend_image  = var.backend_image
-  gateway_image  = var.gateway_image
-  portal_image   = var.portal_image
-  keycloak_image = var.keycloak_image
+  frontend_image = local.frontend_image
+  backend_image  = local.backend_image
+  gateway_image  = local.gateway_image
+  portal_image   = local.portal_image
+  keycloak_image = local.keycloak_image
 
   # Monitoring
   frontend_log_group_name = module.monitoring.frontend_log_group_name
@@ -252,30 +216,30 @@ module "ecs" {
   keycloak_log_group_name = module.monitoring.keycloak_log_group_name
 
   # Secrets
-  database_url_secret_arn           = module.secrets.database_url_arn
-  database_migration_url_secret_arn = module.secrets.database_migration_url_arn
-  internal_api_key_arn              = module.secrets.internal_api_key_arn
-  keycloak_client_secret_arn        = module.secrets.keycloak_client_secret_arn
-  keycloak_admin_username_arn       = module.secrets.keycloak_admin_username_arn
-  keycloak_admin_password_arn       = module.secrets.keycloak_admin_password_arn
-  keycloak_db_username_arn          = module.secrets.keycloak_db_username_arn
-  keycloak_db_password_arn          = module.secrets.keycloak_db_password_arn
-  gateway_db_username_arn           = module.secrets.gateway_db_username_arn
-  gateway_db_password_arn           = module.secrets.gateway_db_password_arn
-  redis_auth_token_arn              = module.secrets.redis_auth_token_arn
-  portal_jwt_secret_arn             = module.secrets.portal_jwt_secret_arn
-  portal_magic_link_secret_arn      = module.secrets.portal_magic_link_secret_arn
-  smtp_username_arn                 = module.secrets.smtp_username_arn
-  smtp_password_arn                 = module.secrets.smtp_password_arn
-  email_unsubscribe_secret_arn      = module.secrets.email_unsubscribe_secret_arn
-  integration_encryption_key_arn    = module.secrets.integration_encryption_key_arn
+  database_url_secret_arn           = data.aws_secretsmanager_secret.persistent["database-url"].arn
+  database_migration_url_secret_arn = data.aws_secretsmanager_secret.persistent["database-migration-url"].arn
+  internal_api_key_arn              = data.aws_secretsmanager_secret.persistent["internal-api-key"].arn
+  keycloak_client_secret_arn        = data.aws_secretsmanager_secret.persistent["keycloak-client-secret"].arn
+  keycloak_admin_username_arn       = data.aws_secretsmanager_secret.persistent["keycloak-admin-username"].arn
+  keycloak_admin_password_arn       = data.aws_secretsmanager_secret.persistent["keycloak-admin-password"].arn
+  keycloak_db_username_arn          = data.aws_secretsmanager_secret.persistent["keycloak-db-username"].arn
+  keycloak_db_password_arn          = data.aws_secretsmanager_secret.persistent["keycloak-db-password"].arn
+  gateway_db_username_arn           = data.aws_secretsmanager_secret.persistent["gateway-db-username"].arn
+  gateway_db_password_arn           = data.aws_secretsmanager_secret.persistent["gateway-db-password"].arn
+  redis_auth_token_arn              = data.aws_secretsmanager_secret.persistent["redis-auth-token"].arn
+  portal_jwt_secret_arn             = data.aws_secretsmanager_secret.persistent["portal-jwt-secret"].arn
+  portal_magic_link_secret_arn      = data.aws_secretsmanager_secret.persistent["portal-magic-link-secret"].arn
+  smtp_username_arn                 = data.aws_secretsmanager_secret.persistent["smtp-username"].arn
+  smtp_password_arn                 = data.aws_secretsmanager_secret.persistent["smtp-password"].arn
+  email_unsubscribe_secret_arn      = data.aws_secretsmanager_secret.persistent["email-unsubscribe-secret"].arn
+  integration_encryption_key_arn    = data.aws_secretsmanager_secret.persistent["integration-encryption-key"].arn
 
   # Infrastructure endpoints
   redis_host   = module.data.redis_endpoint
   rds_endpoint = module.data.rds_endpoint
 
   # App Config
-  s3_bucket_name = module.s3.bucket_name
+  s3_bucket_name = local.s3_bucket_name
 
   # Email + billing
   smtp_host            = var.smtp_host
@@ -292,7 +256,7 @@ module "ecs" {
   mailpit_sg_id            = module.security_groups.mailpit_sg_id
   mailpit_target_group_arn = module.alb.mailpit_target_group_arn
   mailpit_log_group_name   = module.monitoring.mailpit_log_group_name
-  mailpit_ui_auth_arn      = module.secrets.mailpit_ui_auth_arn
+  mailpit_ui_auth_arn      = data.aws_secretsmanager_secret.persistent["mailpit-ui-auth"].arn
 
   # Domain routing (parameterized — no hardcoded domains in ECS task defs)
   app_domain     = var.create_dns ? module.dns.app_domain : var.app_domain
