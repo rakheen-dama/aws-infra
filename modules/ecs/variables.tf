@@ -464,3 +464,48 @@ variable "payfast_sandbox" {
   type        = bool
   default     = true
 }
+
+# -----------------------------------------------------------------------------
+# Email mode + Mailpit (capture mode)
+# -----------------------------------------------------------------------------
+
+variable "email_mode" {
+  description = "Email delivery mode: \"ses\" sends real email via SMTP vars; \"capture\" traps everything in the in-VPC Mailpit service"
+  type        = string
+  default     = "ses"
+
+  validation {
+    condition     = contains(["ses", "capture"], var.email_mode)
+    error_message = "email_mode must be \"ses\" or \"capture\"."
+  }
+}
+
+variable "mailpit_image" {
+  description = "Mailpit container image"
+  type        = string
+  default     = "axllent/mailpit:v1.30"
+}
+
+variable "mailpit_sg_id" {
+  description = "Security group ID for the Mailpit task"
+  type        = string
+  default     = ""
+}
+
+variable "mailpit_target_group_arn" {
+  description = "Target group ARN for the Mailpit UI (empty disables the ALB attachment)"
+  type        = string
+  default     = ""
+}
+
+variable "mailpit_log_group_name" {
+  description = "CloudWatch log group for Mailpit"
+  type        = string
+  default     = ""
+}
+
+variable "mailpit_ui_auth_arn" {
+  description = "Secrets Manager ARN holding the Mailpit UI basic-auth credentials (user:password)"
+  type        = string
+  default     = ""
+}

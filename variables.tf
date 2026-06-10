@@ -346,3 +346,20 @@ variable "create_bastion" {
   type        = bool
   default     = false
 }
+
+variable "email_mode" {
+  description = "Email delivery mode: \"ses\" sends real email; \"capture\" traps everything in the in-VPC Mailpit service (QA)"
+  type        = string
+  default     = "ses"
+
+  validation {
+    condition     = contains(["ses", "capture"], var.email_mode)
+    error_message = "email_mode must be \"ses\" or \"capture\"."
+  }
+}
+
+variable "mailpit_image" {
+  description = "Mailpit container image (capture mode)"
+  type        = string
+  default     = "axllent/mailpit:v1.30"
+}

@@ -404,3 +404,52 @@ resource "aws_lb_listener_rule" "internal_api" {
     }
   }
 }
+
+# -----------------------------------------------------------------------------
+# Mailpit (email capture mode) — UI/API behind the public ALB
+# Mailpit's own basic auth (MP_UI_AUTH) protects the UI and API; /livez and
+# /readyz are exempt from auth, so the target group health check works.
+# -----------------------------------------------------------------------------
+
+resource "aws_lb_target_group" "mailpit" {
+  count = var.mailpit_enabled ? 1 : 0
+
+  name        = "${var.project}-${var.environment}-mailpit"
+  port        = 8025
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  target_type = "ip"
+
+  deregistration_delay = var.deregistration_delay
+
+  health_check {
+    enabled             = true
+    path                = "/readyz"
+    port                = "traffic-port"
+    protocol            = "HTTP"
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+    interval            = 30
+    timeout             = 5
+    matcher             = "200"
+  }
+}
+
+# Priority 25: mail.{domain} -> mailpit (between portal and bff rules)
+resource "aws_lb_listener_rule" "https_mailpit" {
+  count = var.mailpit_enabled && var.certificate_arn != "" && var.mail_domain != "" ? 1 : 0
+
+  listener_arn = aws_lb_listener.https[0].arn
+  priority     = 25
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.mailpit[0].arn
+  }
+
+  condition {
+    host_header {
+      values = [var.mail_domain]
+    }
+  }
+}

@@ -316,3 +316,54 @@ resource "aws_vpc_security_group_ingress_rule" "redis_from_gateway" {
   ip_protocol                  = "tcp"
   referenced_security_group_id = aws_security_group.gateway.id
 }
+
+# -----------------------------------------------------------------------------
+# Mailpit Security Group (email capture mode)
+# UI/API 8025 from the public ALB; SMTP 1025 from backend and Keycloak
+# -----------------------------------------------------------------------------
+
+resource "aws_security_group" "mailpit" {
+  name        = "${var.project}-${var.environment}-sg-mailpit"
+  description = "Mailpit email capture - UI from public ALB, SMTP from backend and Keycloak"
+  vpc_id      = var.vpc_id
+
+  tags = {
+    Name        = "${var.project}-${var.environment}-sg-mailpit"
+    Project     = var.project
+    Environment = var.environment
+    ManagedBy   = "terraform"
+  }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "mailpit_ui_from_public_alb" {
+  security_group_id            = aws_security_group.mailpit.id
+  description                  = "Mailpit UI/API from public ALB"
+  from_port                    = 8025
+  to_port                      = 8025
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = aws_security_group.public_alb.id
+}
+
+resource "aws_vpc_security_group_ingress_rule" "mailpit_smtp_from_backend" {
+  security_group_id            = aws_security_group.mailpit.id
+  description                  = "SMTP from backend"
+  from_port                    = 1025
+  to_port                      = 1025
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = aws_security_group.backend.id
+}
+
+resource "aws_vpc_security_group_ingress_rule" "mailpit_smtp_from_keycloak" {
+  security_group_id            = aws_security_group.mailpit.id
+  description                  = "SMTP from Keycloak (realm email)"
+  from_port                    = 1025
+  to_port                      = 1025
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = aws_security_group.keycloak.id
+}
+
+resource "aws_vpc_security_group_egress_rule" "mailpit_all" {
+  security_group_id = aws_security_group.mailpit.id
+  ip_protocol       = "-1"
+  cidr_ipv4         = "0.0.0.0/0"
+}

@@ -72,3 +72,8 @@ variable "terraform_lock_table_name" {
   type        = string
   default     = "binarymash-terraform-locks"
 }
+
+variable "mailpit_log_group_arn" {
+  description = "ARN of the Mailpit log group"
+  type        = string
+}

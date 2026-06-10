@@ -82,11 +82,15 @@ resource "aws_route53_record" "app" {
 
 locals {
   subdomain_prefix = var.environment == "production" ? "" : "${var.environment}-"
-  dns_records = var.create_dns ? {
-    "app"    = "${local.subdomain_prefix}app.${var.domain_name}"
-    "portal" = "${local.subdomain_prefix}portal.${var.domain_name}"
-    "auth"   = "${local.subdomain_prefix}auth.${var.domain_name}"
-  } : {}
+  dns_records = var.create_dns ? merge(
+    {
+      "app"    = "${local.subdomain_prefix}app.${var.domain_name}"
+      "portal" = "${local.subdomain_prefix}portal.${var.domain_name}"
+      "auth"   = "${local.subdomain_prefix}auth.${var.domain_name}"
+    },
+    # Mailpit UI (email capture mode only)
+    var.create_mail_record ? { "mail" = "${local.subdomain_prefix}mail.${var.domain_name}" } : {}
+  ) : {}
 }
 
 resource "aws_route53_record" "subdomains" {
