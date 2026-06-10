@@ -80,11 +80,11 @@ resource "aws_subnet" "private" {
 }
 
 # -----------------------------------------------------------------------------
-# NAT Gateways (one per AZ for HA)
+# NAT Gateways (one per AZ for HA, or a single shared one for cost savings)
 # -----------------------------------------------------------------------------
 
 resource "aws_eip" "nat" {
-  count  = 2
+  count  = var.nat_gateway_count
   domain = "vpc"
 
   tags = {
@@ -96,7 +96,7 @@ resource "aws_eip" "nat" {
 }
 
 resource "aws_nat_gateway" "main" {
-  count = 2
+  count = var.nat_gateway_count
 
   allocation_id = aws_eip.nat[count.index].id
   subnet_id     = aws_subnet.public[count.index].id
@@ -139,7 +139,8 @@ resource "aws_route_table_association" "public" {
 }
 
 # -----------------------------------------------------------------------------
-# Route Tables — Private (one per AZ, routes through respective NAT)
+# Route Tables — Private (one per AZ; each routes through its own NAT when
+# nat_gateway_count = 2, or all share NAT 0 when nat_gateway_count = 1)
 # -----------------------------------------------------------------------------
 
 resource "aws_route_table" "private" {
@@ -149,7 +150,7 @@ resource "aws_route_table" "private" {
 
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main[count.index].id
+    nat_gateway_id = aws_nat_gateway.main[min(count.index, var.nat_gateway_count - 1)].id
   }
 
   tags = {

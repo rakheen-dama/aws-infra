@@ -10,6 +10,7 @@ aws_region  = "af-south-1"
 vpc_cidr             = "10.1.0.0/16"
 public_subnet_cidrs  = ["10.1.1.0/24", "10.1.2.0/24"]
 private_subnet_cidrs = ["10.1.10.0/24", "10.1.20.0/24"]
+nat_gateway_count    = 1 # single NAT for staging (~$40/mo saving); production default is 2
 
 # Container images — updated by CI/CD pipeline
 frontend_image = "public.ecr.aws/nginx/nginx:latest"
