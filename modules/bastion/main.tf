@@ -16,7 +16,7 @@ data "aws_ssm_parameter" "al2023_arm64" {
 }
 
 resource "aws_iam_role" "bastion" {
-  name = "${var.project}-${var.environment}-bastion-role"
+  name = "${var.project}-${var.environment}-bastion"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
