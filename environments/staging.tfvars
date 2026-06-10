@@ -18,15 +18,16 @@ gateway_image  = "public.ecr.aws/nginx/nginx:latest"
 portal_image   = "public.ecr.aws/nginx/nginx:latest"
 keycloak_image = "public.ecr.aws/nginx/nginx:latest"
 
-# DNS (set to true and fill in values when domain is available)
-create_dns     = false
-domain_name    = ""
+# DNS — hosted_zone_id: fill from `aws route53 list-hosted-zones-by-name --dns-name heykazi.com`
+# before the first terraform apply (manual step B3 in the deployment plan)
+create_dns     = true
+domain_name    = "heykazi.com"
 hosted_zone_id = ""
 
 # ALB Routing Domains
-app_domain    = "staging-app.binarymash.io"
-portal_domain = "staging-portal.binarymash.io"
-auth_domain   = "staging-auth.binarymash.io"
+app_domain    = "staging-app.heykazi.com"
+portal_domain = "staging-portal.heykazi.com"
+auth_domain   = "staging-auth.heykazi.com"
 
 # ALB Protection
 alb_deletion_protection = false
@@ -53,5 +54,5 @@ rds_skip_final_snapshot = true
 redis_node_type = "cache.t4g.micro"
 
 # GitHub OIDC
-github_repo               = "rakheen-dama/kazi"
+github_repo               = "rakheen-dama/b2b-strawman"
 terraform_lock_table_name = "binarymash-terraform-locks"

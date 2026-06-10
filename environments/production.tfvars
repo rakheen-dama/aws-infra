@@ -18,15 +18,15 @@ gateway_image  = "public.ecr.aws/nginx/nginx:latest"
 portal_image   = "public.ecr.aws/nginx/nginx:latest"
 keycloak_image = "public.ecr.aws/nginx/nginx:latest"
 
-# DNS (set to true and fill in values when domain is available)
+# DNS — flip create_dns to true and fill hosted_zone_id when provisioning production
 create_dns     = false
-domain_name    = ""
+domain_name    = "heykazi.com"
 hosted_zone_id = ""
 
 # ALB Routing Domains
-app_domain    = "app.binarymash.io"
-portal_domain = "portal.binarymash.io"
-auth_domain   = "auth.binarymash.io"
+app_domain    = "app.heykazi.com"
+portal_domain = "portal.heykazi.com"
+auth_domain   = "auth.heykazi.com"
 
 # ALB Protection
 alb_deletion_protection = true
@@ -53,5 +53,5 @@ rds_skip_final_snapshot = false
 redis_node_type = "cache.t4g.micro"
 
 # GitHub OIDC
-github_repo               = "rakheen-dama/kazi"
+github_repo               = "rakheen-dama/b2b-strawman"
 terraform_lock_table_name = "binarymash-terraform-locks"
