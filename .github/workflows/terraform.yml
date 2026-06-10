@@ -255,7 +255,7 @@ jobs:
           case "$TF_ACTION" in
             plan)    terraform plan "${ARGS[@]}" ;;
             apply)   terraform apply -auto-approve "${ARGS[@]}" ;;
-            destroy) terraform destroy -auto-approve -var-file="$VAR_FILE" ;;
+            destroy) terraform destroy -auto-approve "${ARGS[@]}" ;;
           esac
 
       # After a successful restore, delete the consumed snapshot so the next

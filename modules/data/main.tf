@@ -66,7 +66,11 @@ resource "aws_db_instance" "main" {
   max_allocated_storage = var.rds_max_storage_gb
   storage_encrypted     = true
 
-  manage_master_user_password = true
+  # Cannot be combined with snapshot_identifier (the snapshot carries its own
+  # master credentials). On a restore apply this is null; the NEXT apply (var
+  # empty again) re-enables managed rotation in place, recreating the master
+  # secret.
+  manage_master_user_password = var.rds_restore_snapshot_identifier == "" ? true : null
 
   db_subnet_group_name   = aws_db_subnet_group.main.name
   parameter_group_name   = aws_db_parameter_group.main.name

@@ -26,7 +26,13 @@ else
 fi
 
 terraform init -backend-config="key=${ENV}/terraform.tfstate" -input=false
-terraform apply -var-file="environments/${ENV}.tfvars" "${RESTORE_ARGS[@]}"
+# Explicit branch: "${RESTORE_ARGS[@]}" on an empty array is an unbound-variable
+# error under macOS bash 3.2 with set -u.
+if [ ${#RESTORE_ARGS[@]} -gt 0 ]; then
+  terraform apply -var-file="environments/${ENV}.tfvars" "${RESTORE_ARGS[@]}"
+else
+  terraform apply -var-file="environments/${ENV}.tfvars"
+fi
 
 if [ ${#RESTORE_ARGS[@]} -gt 0 ]; then
   echo ">>> Waiting for the restored database to become available..."
