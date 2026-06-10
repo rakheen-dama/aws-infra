@@ -145,6 +145,7 @@ module "iam" {
   gateway_log_group_arn       = module.monitoring.gateway_log_group_arn
   portal_log_group_arn        = module.monitoring.portal_log_group_arn
   keycloak_log_group_arn      = module.monitoring.keycloak_log_group_arn
+  mailpit_log_group_arn       = module.monitoring.mailpit_log_group_arn
   github_repo                 = var.github_repo
   github_repos                = var.github_repos
   terraform_state_bucket_name = var.terraform_state_bucket_name

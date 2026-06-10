@@ -50,6 +50,7 @@ data "aws_iam_policy_document" "execution_policy" {
       "${var.gateway_log_group_arn}:*",
       "${var.portal_log_group_arn}:*",
       "${var.keycloak_log_group_arn}:*",
+      "${var.mailpit_log_group_arn}:*",
     ]
   }
 

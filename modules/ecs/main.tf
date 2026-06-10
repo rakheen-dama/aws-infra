@@ -27,15 +27,16 @@ locals {
   email_capture = var.email_mode == "capture"
 
   # Capture mode relays through the in-VPC Mailpit service: plain SMTP, no auth,
-  # no STARTTLS. The SPRING_MAIL_PROPERTIES_* env vars map onto
-  # spring.mail.properties.* via Spring Boot relaxed binding, overriding the
-  # auth/starttls literals in the backend's application.yml. SMTP_USERNAME /
-  # SMTP_PASSWORD secrets stay injected but are ignored when auth is false.
+  # no STARTTLS. SMTP_AUTH / SMTP_STARTTLS are read by the backend's
+  # application.yml placeholders (spring.mail.properties.mail.smtp.*, defaults
+  # true) — plain env names on purpose, to avoid relying on Spring relaxed
+  # binding of map keys. SMTP_USERNAME / SMTP_PASSWORD secrets stay injected
+  # but are ignored when auth is false.
   backend_smtp_env = local.email_capture ? [
     { name = "SMTP_HOST", value = "mailpit.kazi.internal" },
     { name = "SMTP_PORT", value = "1025" },
-    { name = "SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH", value = "false" },
-    { name = "SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE", value = "false" },
+    { name = "SMTP_AUTH", value = "false" },
+    { name = "SMTP_STARTTLS", value = "false" },
     ] : [
     { name = "SMTP_HOST", value = var.smtp_host },
     { name = "SMTP_PORT", value = var.smtp_port },
