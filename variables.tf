@@ -288,3 +288,9 @@ variable "terraform_lock_table_name" {
   type        = string
   default     = "binarymash-terraform-locks"
 }
+
+variable "use_fargate_spot" {
+  description = "Weight ECS services onto FARGATE_SPOT (staging cost optimization). Production should keep this false."
+  type        = bool
+  default     = false
+}

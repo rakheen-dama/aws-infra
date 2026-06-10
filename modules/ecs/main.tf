@@ -143,7 +143,21 @@ resource "aws_ecs_service" "frontend" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.frontend.arn
   desired_count   = var.frontend_desired_count
-  launch_type     = "FARGATE"
+
+  # Spot-weighted (4:1) when use_fargate_spot, plain FARGATE otherwise — same for all 5 services
+  dynamic "capacity_provider_strategy" {
+    for_each = var.use_fargate_spot ? [1] : []
+    content {
+      capacity_provider = "FARGATE_SPOT"
+      weight            = 4
+    }
+  }
+
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE"
+    weight            = 1
+    base              = var.use_fargate_spot ? 0 : 1
+  }
 
   network_configuration {
     subnets          = var.private_subnet_ids
@@ -393,8 +407,21 @@ resource "aws_ecs_service" "backend" {
   cluster                           = aws_ecs_cluster.main.id
   task_definition                   = aws_ecs_task_definition.backend.arn
   desired_count                     = var.backend_desired_count
-  launch_type                       = "FARGATE"
   health_check_grace_period_seconds = 180
+
+  dynamic "capacity_provider_strategy" {
+    for_each = var.use_fargate_spot ? [1] : []
+    content {
+      capacity_provider = "FARGATE_SPOT"
+      weight            = 4
+    }
+  }
+
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE"
+    weight            = 1
+    base              = var.use_fargate_spot ? 0 : 1
+  }
 
   network_configuration {
     subnets          = var.private_subnet_ids
@@ -442,7 +469,20 @@ resource "aws_ecs_service" "gateway" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.gateway.arn
   desired_count   = var.gateway_desired_count
-  launch_type     = "FARGATE"
+
+  dynamic "capacity_provider_strategy" {
+    for_each = var.use_fargate_spot ? [1] : []
+    content {
+      capacity_provider = "FARGATE_SPOT"
+      weight            = 4
+    }
+  }
+
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE"
+    weight            = 1
+    base              = var.use_fargate_spot ? 0 : 1
+  }
 
   network_configuration {
     subnets          = var.private_subnet_ids
@@ -481,7 +521,20 @@ resource "aws_ecs_service" "portal" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.portal.arn
   desired_count   = var.portal_desired_count
-  launch_type     = "FARGATE"
+
+  dynamic "capacity_provider_strategy" {
+    for_each = var.use_fargate_spot ? [1] : []
+    content {
+      capacity_provider = "FARGATE_SPOT"
+      weight            = 4
+    }
+  }
+
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE"
+    weight            = 1
+    base              = var.use_fargate_spot ? 0 : 1
+  }
 
   network_configuration {
     subnets          = var.private_subnet_ids
@@ -520,7 +573,20 @@ resource "aws_ecs_service" "keycloak" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.keycloak.arn
   desired_count   = var.keycloak_desired_count
-  launch_type     = "FARGATE"
+
+  dynamic "capacity_provider_strategy" {
+    for_each = var.use_fargate_spot ? [1] : []
+    content {
+      capacity_provider = "FARGATE_SPOT"
+      weight            = 4
+    }
+  }
+
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE"
+    weight            = 1
+    base              = var.use_fargate_spot ? 0 : 1
+  }
 
   network_configuration {
     subnets          = var.private_subnet_ids

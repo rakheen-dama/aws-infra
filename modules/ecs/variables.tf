@@ -378,3 +378,9 @@ variable "keycloak_desired_count" {
   type        = number
   default     = 1
 }
+
+variable "use_fargate_spot" {
+  description = "Weight ECS services onto FARGATE_SPOT (staging cost optimization). Production should keep this false."
+  type        = bool
+  default     = false
+}
