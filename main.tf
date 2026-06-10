@@ -271,6 +271,15 @@ module "ecs" {
   # App Config
   s3_bucket_name = module.s3.bucket_name
 
+  # Email + billing
+  smtp_host            = var.smtp_host
+  smtp_port            = var.smtp_port
+  email_sender_address = var.email_sender_address
+  payfast_merchant_id  = var.payfast_merchant_id
+  payfast_merchant_key = var.payfast_merchant_key
+  payfast_passphrase   = var.payfast_passphrase
+  payfast_sandbox      = var.payfast_sandbox
+
   # Domain routing (parameterized — no hardcoded domains in ECS task defs)
   app_domain     = var.create_dns ? module.dns.app_domain : var.app_domain
   portal_domain  = var.create_dns ? module.dns.portal_domain : var.portal_domain
