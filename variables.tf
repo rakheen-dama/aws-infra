@@ -41,6 +41,17 @@ variable "private_subnet_cidrs" {
   default     = ["10.0.10.0/24", "10.0.20.0/24"]
 }
 
+variable "nat_gateway_count" {
+  description = "Number of NAT gateways: 1 (single, cost-optimized staging) or 2 (one per AZ, production HA)"
+  type        = number
+  default     = 2
+
+  validation {
+    condition     = var.nat_gateway_count >= 1 && var.nat_gateway_count <= 2
+    error_message = "nat_gateway_count must be 1 or 2."
+  }
+}
+
 # -----------------------------------------------------------------------------
 # RDS
 # -----------------------------------------------------------------------------
