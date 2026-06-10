@@ -268,3 +268,8 @@ resource "aws_cloudwatch_metric_alarm" "backend_cpu_high" {
   alarm_actions = var.alert_email != "" ? [aws_sns_topic.alerts.arn] : []
   ok_actions    = var.alert_email != "" ? [aws_sns_topic.alerts.arn] : []
 }
+
+resource "aws_cloudwatch_log_group" "mailpit" {
+  name              = "/${var.project}/${var.environment}/mailpit"
+  retention_in_days = var.log_retention_days
+}

@@ -158,13 +158,14 @@ module "iam" {
 module "dns" {
   source = "./modules/dns"
 
-  project        = var.project
-  environment    = var.environment
-  create_dns     = var.create_dns
-  domain_name    = var.domain_name
-  hosted_zone_id = var.hosted_zone_id
-  alb_dns_name   = module.alb.public_alb_dns_name
-  alb_zone_id    = module.alb.public_alb_zone_id
+  project            = var.project
+  environment        = var.environment
+  create_dns         = var.create_dns
+  domain_name        = var.domain_name
+  hosted_zone_id     = var.hosted_zone_id
+  alb_dns_name       = module.alb.public_alb_dns_name
+  alb_zone_id        = module.alb.public_alb_zone_id
+  create_mail_record = var.email_mode == "capture"
 }
 
 # -----------------------------------------------------------------------------
@@ -189,6 +190,10 @@ module "alb" {
   app_domain    = var.create_dns ? module.dns.app_domain : var.app_domain
   portal_domain = var.create_dns ? module.dns.portal_domain : var.portal_domain
   auth_domain   = var.create_dns ? module.dns.auth_domain : var.auth_domain
+
+  # Mailpit UI (email capture mode)
+  mailpit_enabled = var.email_mode == "capture"
+  mail_domain     = var.create_dns ? module.dns.mail_domain : ""
 
   # ALB protection
   alb_deletion_protection = var.alb_deletion_protection
@@ -279,6 +284,14 @@ module "ecs" {
   payfast_merchant_key = var.payfast_merchant_key
   payfast_passphrase   = var.payfast_passphrase
   payfast_sandbox      = var.payfast_sandbox
+
+  # Email capture (Mailpit)
+  email_mode               = var.email_mode
+  mailpit_image            = var.mailpit_image
+  mailpit_sg_id            = module.security_groups.mailpit_sg_id
+  mailpit_target_group_arn = module.alb.mailpit_target_group_arn
+  mailpit_log_group_name   = module.monitoring.mailpit_log_group_name
+  mailpit_ui_auth_arn      = module.secrets.mailpit_ui_auth_arn
 
   # Domain routing (parameterized — no hardcoded domains in ECS task defs)
   app_domain     = var.create_dns ? module.dns.app_domain : var.app_domain

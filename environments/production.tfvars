@@ -42,6 +42,9 @@ secrets_recovery_window = 30
 autoscaling_min_capacity = 2
 autoscaling_max_capacity = 10
 
+# Email — production always sends for real via SES
+email_mode = "ses"
+
 # RDS
 rds_instance_class      = "db.t4g.medium"
 rds_multi_az            = true

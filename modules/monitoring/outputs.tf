@@ -52,3 +52,8 @@ output "sns_topic_arn" {
   description = "ARN of the alerts SNS topic"
   value       = aws_sns_topic.alerts.arn
 }
+
+output "mailpit_log_group_name" {
+  description = "Mailpit log group name"
+  value       = aws_cloudwatch_log_group.mailpit.name
+}

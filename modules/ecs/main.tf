@@ -23,6 +23,25 @@ resource "aws_ecs_cluster_capacity_providers" "main" {
   }
 }
 
+locals {
+  email_capture = var.email_mode == "capture"
+
+  # Capture mode relays through the in-VPC Mailpit service: plain SMTP, no auth,
+  # no STARTTLS. The SPRING_MAIL_PROPERTIES_* env vars map onto
+  # spring.mail.properties.* via Spring Boot relaxed binding, overriding the
+  # auth/starttls literals in the backend's application.yml. SMTP_USERNAME /
+  # SMTP_PASSWORD secrets stay injected but are ignored when auth is false.
+  backend_smtp_env = local.email_capture ? [
+    { name = "SMTP_HOST", value = "mailpit.kazi.internal" },
+    { name = "SMTP_PORT", value = "1025" },
+    { name = "SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH", value = "false" },
+    { name = "SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE", value = "false" },
+    ] : [
+    { name = "SMTP_HOST", value = var.smtp_host },
+    { name = "SMTP_PORT", value = var.smtp_port },
+  ]
+}
+
 # -----------------------------------------------------------------------------
 # Frontend Task Definition
 # -----------------------------------------------------------------------------
@@ -99,7 +118,7 @@ resource "aws_ecs_task_definition" "backend" {
         }
       ]
 
-      environment = [
+      environment = concat([
         # "prod" deliberately, not var.environment — there is no application-staging.yml;
         # staging runs the prod profile and differs via env vars only
         { name = "SPRING_PROFILES_ACTIVE", value = "prod,keycloak" },
@@ -110,8 +129,6 @@ resource "aws_ecs_task_definition" "backend" {
         { name = "KEYCLOAK_AUTH_SERVER_URL", value = "https://${var.auth_domain}" },
         { name = "KEYCLOAK_REALM", value = var.keycloak_realm },
         { name = "SPRING_FLYWAY_ENABLED", value = "true" },
-        { name = "SMTP_HOST", value = var.smtp_host },
-        { name = "SMTP_PORT", value = var.smtp_port },
         { name = "EMAIL_SENDER_ADDRESS", value = var.email_sender_address },
         { name = "APP_BASE_URL", value = "https://${var.app_domain}" },
         { name = "PORTAL_BASE_URL", value = "https://${var.portal_domain}" },
@@ -126,7 +143,7 @@ resource "aws_ecs_task_definition" "backend" {
         { name = "PAYFAST_MERCHANT_KEY", value = var.payfast_merchant_key },
         { name = "PAYFAST_PASSPHRASE", value = var.payfast_passphrase },
         { name = "PAYFAST_SANDBOX", value = var.payfast_sandbox ? "true" : "false" },
-      ]
+      ], local.backend_smtp_env)
 
       secrets = [
         { name = "DATABASE_URL", valueFrom = var.database_url_secret_arn },
@@ -639,4 +656,136 @@ resource "aws_ecs_service" "keycloak" {
   lifecycle {
     ignore_changes = [task_definition]
   }
+}
+
+# -----------------------------------------------------------------------------
+# Mailpit (email capture mode only) — catches all outbound email for QA.
+# SMTP on 1025 (service discovery: mailpit.kazi.internal), UI/API on 8025
+# behind the public ALB. Messages live in container memory/ephemeral storage —
+# they do not survive task replacement, which is acceptable for QA capture.
+# -----------------------------------------------------------------------------
+
+resource "aws_ecs_task_definition" "mailpit" {
+  count = local.email_capture ? 1 : 0
+
+  family                   = "${var.project}-${var.environment}-mailpit"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = var.ecs_execution_role_arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "mailpit"
+      image     = var.mailpit_image
+      essential = true
+
+      portMappings = [
+        { containerPort = 1025, protocol = "tcp" },
+        { containerPort = 8025, protocol = "tcp" },
+      ]
+
+      environment = [
+        { name = "MP_MAX_MESSAGES", value = "5000" },
+      ]
+
+      secrets = [
+        # user:password — enables basic auth on the UI and API (/livez and
+        # /readyz stay unauthenticated for the ALB health check)
+        { name = "MP_UI_AUTH", valueFrom = var.mailpit_ui_auth_arn },
+      ]
+
+      healthCheck = {
+        command     = ["CMD", "/mailpit", "readyz"]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 10
+      }
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = var.mailpit_log_group_name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+    }
+  ])
+}
+
+resource "aws_service_discovery_service" "mailpit" {
+  count = local.email_capture ? 1 : 0
+
+  name = "mailpit"
+
+  dns_config {
+    namespace_id = aws_service_discovery_private_dns_namespace.internal.id
+
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+
+    routing_policy = "MULTIVALUE"
+  }
+
+  health_check_custom_config {
+    failure_threshold = 1
+  }
+}
+
+resource "aws_ecs_service" "mailpit" {
+  count = local.email_capture ? 1 : 0
+
+  name            = "${var.project}-${var.environment}-mailpit"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.mailpit[0].arn
+  desired_count   = 1
+
+  dynamic "capacity_provider_strategy" {
+    for_each = var.use_fargate_spot ? [1] : []
+    content {
+      capacity_provider = "FARGATE_SPOT"
+      weight            = 4
+    }
+  }
+
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE"
+    weight            = 1
+    base              = var.use_fargate_spot ? 0 : 1
+  }
+
+  network_configuration {
+    subnets          = var.private_subnet_ids
+    security_groups  = [var.mailpit_sg_id]
+    assign_public_ip = false
+  }
+
+  dynamic "load_balancer" {
+    for_each = var.mailpit_target_group_arn != "" ? [1] : []
+    content {
+      target_group_arn = var.mailpit_target_group_arn
+      container_name   = "mailpit"
+      container_port   = 8025
+    }
+  }
+
+  service_registries {
+    registry_arn = aws_service_discovery_service.mailpit[0].arn
+  }
+
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
+
+  deployment_minimum_healthy_percent = 0
+  deployment_maximum_percent         = 100
+
+  # Unlike the app services, Mailpit's task definition is fully Terraform-managed
+  # (no CI/CD image pushes), so task_definition changes are NOT ignored.
 }

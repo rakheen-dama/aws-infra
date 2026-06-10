@@ -72,3 +72,8 @@ output "keycloak_tg_arn_suffix" {
   description = "ARN suffix of the keycloak target group (for CloudWatch alarm dimensions)"
   value       = aws_lb_target_group.keycloak.arn_suffix
 }
+
+output "mailpit_target_group_arn" {
+  description = "ARN of the Mailpit target group (empty when disabled)"
+  value       = var.mailpit_enabled ? aws_lb_target_group.mailpit[0].arn : ""
+}

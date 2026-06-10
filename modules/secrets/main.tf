@@ -26,6 +26,7 @@ locals {
     "gateway-db-username"        = "CHANGE_ME_gateway_db_username"
     "gateway-db-password"        = "CHANGE_ME_gateway_db_password"
     "redis-auth-token"           = "CHANGE_ME_redis_auth_token"
+    "mailpit-ui-auth"            = "CHANGE_ME_mailpit_ui_auth" # format: user:password
   }
 }
 

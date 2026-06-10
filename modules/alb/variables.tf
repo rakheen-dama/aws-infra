@@ -89,3 +89,15 @@ variable "alb_deletion_protection" {
   type        = bool
   default     = false
 }
+
+variable "mailpit_enabled" {
+  description = "Create the Mailpit target group and listener rule (email capture mode)"
+  type        = bool
+  default     = false
+}
+
+variable "mail_domain" {
+  description = "Host header for the Mailpit UI (e.g., staging-mail.heykazi.com)"
+  type        = string
+  default     = ""
+}

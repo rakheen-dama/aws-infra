@@ -37,3 +37,9 @@ variable "alb_zone_id" {
   type        = string
   default     = ""
 }
+
+variable "create_mail_record" {
+  description = "Create the mail subdomain record for the Mailpit UI (email capture mode)"
+  type        = bool
+  default     = false
+}

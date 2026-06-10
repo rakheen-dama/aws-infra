@@ -102,6 +102,19 @@ Both repos use the GitHub Actions OIDC role provisioned by the IAM module.
 | staging-app.heykazi.com | Frontend | Staging |
 | staging-auth.heykazi.com | Keycloak | Staging |
 | staging-portal.heykazi.com | Portal | Staging |
+| staging-mail.heykazi.com | Mailpit UI (email capture mode) | Staging |
+
+## Email Modes
+
+`email_mode` per environment: `"capture"` (staging) traps all outbound email in an
+in-VPC Mailpit ECS service — unlimited addresses, UI + REST API at the mail
+subdomain behind Mailpit basic auth (`mailpit-ui-auth` secret, `user:password`).
+`"ses"` (production) sends real email via the SMTP_* settings.
+
+Switching modes = `terraform apply` (backend task def gets new SMTP env) **plus**
+re-running the Keycloak realm SMTP bootstrap step (keycloak-saas
+`scripts/bootstrap-realm.sh`) with matching SMTP values — Keycloak stores SMTP in
+realm config, not env vars. Mailpit messages don't survive task replacement.
 
 ## Version Constraints
 

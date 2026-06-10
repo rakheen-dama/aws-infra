@@ -25,3 +25,8 @@ output "auth_domain" {
   description = "FQDN of the auth subdomain (empty if DNS is disabled)"
   value       = var.create_dns ? aws_route53_record.subdomains["auth"].fqdn : ""
 }
+
+output "mail_domain" {
+  description = "FQDN of the Mailpit UI subdomain (empty unless create_dns and create_mail_record)"
+  value       = var.create_dns && var.create_mail_record ? aws_route53_record.subdomains["mail"].fqdn : ""
+}

@@ -92,3 +92,8 @@ output "redis_auth_token_arn" {
   description = "ARN of the Redis auth token secret"
   value       = aws_secretsmanager_secret.this["redis-auth-token"].arn
 }
+
+output "mailpit_ui_auth_arn" {
+  description = "ARN of the Mailpit UI basic-auth secret (user:password)"
+  value       = aws_secretsmanager_secret.this["mailpit-ui-auth"].arn
+}

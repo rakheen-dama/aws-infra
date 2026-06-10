@@ -222,3 +222,8 @@ output "bastion_instance_id" {
   description = "SSM bastion instance ID (null when create_bastion = false)"
   value       = var.create_bastion ? module.bastion[0].instance_id : null
 }
+
+output "mailpit_url" {
+  description = "Mailpit UI/API URL (email capture mode only; basic-auth credentials in the mailpit-ui-auth secret)"
+  value       = var.email_mode == "capture" && var.create_dns ? "https://${module.dns.mail_domain}" : null
+}

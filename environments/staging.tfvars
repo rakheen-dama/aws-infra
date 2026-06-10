@@ -50,6 +50,11 @@ use_fargate_spot = true
 # SSM bastion for DB client access (DBeaver via Session Manager port forward)
 create_bastion = true
 
+# Email — capture mode: all email lands in Mailpit (staging-mail.heykazi.com,
+# basic auth from the mailpit-ui-auth secret). Switch to "ses" for real delivery,
+# then re-run the Keycloak realm SMTP bootstrap step with SES values.
+email_mode = "capture"
+
 # RDS
 rds_instance_class      = "db.t4g.micro"
 rds_multi_az            = false

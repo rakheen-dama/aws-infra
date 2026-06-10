@@ -42,3 +42,8 @@ output "redis_sg_id" {
   description = "Security group ID for ElastiCache Redis"
   value       = aws_security_group.redis.id
 }
+
+output "mailpit_sg_id" {
+  description = "Security group ID for the Mailpit ECS task"
+  value       = aws_security_group.mailpit.id
+}
