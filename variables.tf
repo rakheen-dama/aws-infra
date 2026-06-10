@@ -294,3 +294,49 @@ variable "use_fargate_spot" {
   type        = bool
   default     = false
 }
+
+# -----------------------------------------------------------------------------
+# Backend email + billing
+# -----------------------------------------------------------------------------
+
+variable "smtp_host" {
+  description = "SMTP host the backend sends through (SES endpoint, or Mailpit in capture mode)"
+  type        = string
+  default     = "email-smtp.af-south-1.amazonaws.com"
+}
+
+variable "smtp_port" {
+  description = "SMTP port (587 for SES STARTTLS, 1025 for Mailpit)"
+  type        = string
+  default     = "587"
+}
+
+variable "email_sender_address" {
+  description = "From address for transactional email (must be SES-verified when sending for real)"
+  type        = string
+  default     = "noreply@heykazi.com"
+}
+
+variable "payfast_merchant_id" {
+  description = "PayFast merchant ID (default: PayFast public sandbox)"
+  type        = string
+  default     = "10000100"
+}
+
+variable "payfast_merchant_key" {
+  description = "PayFast merchant key (default: PayFast public sandbox)"
+  type        = string
+  default     = "46f0cd694581a"
+}
+
+variable "payfast_passphrase" {
+  description = "PayFast passphrase (default: PayFast public sandbox)"
+  type        = string
+  default     = "jt7NOE43FZPn"
+}
+
+variable "payfast_sandbox" {
+  description = "Use the PayFast sandbox endpoint. Must be false (with real credentials) before enabling production billing."
+  type        = bool
+  default     = true
+}

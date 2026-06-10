@@ -384,3 +384,83 @@ variable "use_fargate_spot" {
   type        = bool
   default     = false
 }
+
+# -----------------------------------------------------------------------------
+# Backend email + portal secrets (Secrets Manager ARNs)
+# -----------------------------------------------------------------------------
+
+variable "portal_jwt_secret_arn" {
+  description = "ARN of the portal JWT secret"
+  type        = string
+}
+
+variable "portal_magic_link_secret_arn" {
+  description = "ARN of the portal magic link secret"
+  type        = string
+}
+
+variable "smtp_username_arn" {
+  description = "ARN of the SMTP username secret"
+  type        = string
+}
+
+variable "smtp_password_arn" {
+  description = "ARN of the SMTP password secret"
+  type        = string
+}
+
+variable "email_unsubscribe_secret_arn" {
+  description = "ARN of the email unsubscribe secret"
+  type        = string
+}
+
+variable "integration_encryption_key_arn" {
+  description = "ARN of the integration encryption key secret"
+  type        = string
+}
+
+# -----------------------------------------------------------------------------
+# Backend email + billing configuration
+# -----------------------------------------------------------------------------
+
+variable "smtp_host" {
+  description = "SMTP host the backend sends through (SES endpoint, or Mailpit in capture mode)"
+  type        = string
+  default     = "email-smtp.af-south-1.amazonaws.com"
+}
+
+variable "smtp_port" {
+  description = "SMTP port (587 for SES STARTTLS, 1025 for Mailpit)"
+  type        = string
+  default     = "587"
+}
+
+variable "email_sender_address" {
+  description = "From address for transactional email (must be SES-verified when sending for real)"
+  type        = string
+  default     = "noreply@heykazi.com"
+}
+
+variable "payfast_merchant_id" {
+  description = "PayFast merchant ID (default: PayFast public sandbox)"
+  type        = string
+  default     = "10000100"
+}
+
+variable "payfast_merchant_key" {
+  description = "PayFast merchant key (default: PayFast public sandbox)"
+  type        = string
+  default     = "46f0cd694581a"
+}
+
+variable "payfast_passphrase" {
+  description = "PayFast passphrase (default: PayFast public sandbox)"
+  type        = string
+  default     = "jt7NOE43FZPn"
+}
+
+variable "payfast_sandbox" {
+  description = "Use the PayFast sandbox endpoint"
+  type        = bool
+  default     = true
+}

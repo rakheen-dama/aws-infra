@@ -257,6 +257,12 @@ module "ecs" {
   gateway_db_username_arn           = module.secrets.gateway_db_username_arn
   gateway_db_password_arn           = module.secrets.gateway_db_password_arn
   redis_auth_token_arn              = module.secrets.redis_auth_token_arn
+  portal_jwt_secret_arn             = module.secrets.portal_jwt_secret_arn
+  portal_magic_link_secret_arn      = module.secrets.portal_magic_link_secret_arn
+  smtp_username_arn                 = module.secrets.smtp_username_arn
+  smtp_password_arn                 = module.secrets.smtp_password_arn
+  email_unsubscribe_secret_arn      = module.secrets.email_unsubscribe_secret_arn
+  integration_encryption_key_arn    = module.secrets.integration_encryption_key_arn
 
   # Infrastructure endpoints
   redis_host   = module.data.redis_endpoint
@@ -264,6 +270,15 @@ module "ecs" {
 
   # App Config
   s3_bucket_name = module.s3.bucket_name
+
+  # Email + billing
+  smtp_host            = var.smtp_host
+  smtp_port            = var.smtp_port
+  email_sender_address = var.email_sender_address
+  payfast_merchant_id  = var.payfast_merchant_id
+  payfast_merchant_key = var.payfast_merchant_key
+  payfast_passphrase   = var.payfast_passphrase
+  payfast_sandbox      = var.payfast_sandbox
 
   # Domain routing (parameterized — no hardcoded domains in ECS task defs)
   app_domain     = var.create_dns ? module.dns.app_domain : var.app_domain
