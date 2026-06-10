@@ -483,7 +483,7 @@ variable "email_mode" {
 variable "mailpit_image" {
   description = "Mailpit container image"
   type        = string
-  default     = "axllent/mailpit:v1.27"
+  default     = "axllent/mailpit:v1.30"
 }
 
 variable "mailpit_sg_id" {

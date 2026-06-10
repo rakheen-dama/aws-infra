@@ -361,5 +361,5 @@ variable "email_mode" {
 variable "mailpit_image" {
   description = "Mailpit container image (capture mode)"
   type        = string
-  default     = "axllent/mailpit:v1.27"
+  default     = "axllent/mailpit:v1.30"
 }
