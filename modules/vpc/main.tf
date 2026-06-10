@@ -141,6 +141,9 @@ resource "aws_route_table_association" "public" {
 # -----------------------------------------------------------------------------
 # Route Tables — Private (one per AZ; each routes through its own NAT when
 # nat_gateway_count = 2, or all share NAT 0 when nat_gateway_count = 1)
+#
+# Changing 1 -> 2 on a live environment replaces aws_route_table.private[1],
+# briefly dropping internet egress for AZ-b tasks — do it in a quiet window.
 # -----------------------------------------------------------------------------
 
 resource "aws_route_table" "private" {
