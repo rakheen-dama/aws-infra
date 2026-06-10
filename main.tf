@@ -257,6 +257,12 @@ module "ecs" {
   gateway_db_username_arn           = module.secrets.gateway_db_username_arn
   gateway_db_password_arn           = module.secrets.gateway_db_password_arn
   redis_auth_token_arn              = module.secrets.redis_auth_token_arn
+  portal_jwt_secret_arn             = module.secrets.portal_jwt_secret_arn
+  portal_magic_link_secret_arn      = module.secrets.portal_magic_link_secret_arn
+  smtp_username_arn                 = module.secrets.smtp_username_arn
+  smtp_password_arn                 = module.secrets.smtp_password_arn
+  email_unsubscribe_secret_arn      = module.secrets.email_unsubscribe_secret_arn
+  integration_encryption_key_arn    = module.secrets.integration_encryption_key_arn
 
   # Infrastructure endpoints
   redis_host   = module.data.redis_endpoint

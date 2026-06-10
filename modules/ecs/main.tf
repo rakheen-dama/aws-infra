@@ -100,16 +100,32 @@ resource "aws_ecs_task_definition" "backend" {
       ]
 
       environment = [
-        { name = "SPRING_PROFILES_ACTIVE", value = "${var.environment},keycloak" },
+        # "prod" deliberately, not var.environment — there is no application-staging.yml;
+        # staging runs the prod profile and differs via env vars only
+        { name = "SPRING_PROFILES_ACTIVE", value = "prod,keycloak" },
         { name = "AWS_S3_BUCKET", value = var.s3_bucket_name },
         { name = "AWS_REGION", value = var.aws_region },
         { name = "JWT_ISSUER_URI", value = "https://${var.auth_domain}/realms/${var.keycloak_realm}" },
         { name = "JWT_JWK_SET_URI", value = "https://${var.auth_domain}/realms/${var.keycloak_realm}/protocol/openid-connect/certs" },
         { name = "KEYCLOAK_AUTH_SERVER_URL", value = "https://${var.auth_domain}" },
         { name = "KEYCLOAK_REALM", value = var.keycloak_realm },
-        { name = "REDIS_HOST", value = var.redis_host },
-        { name = "REDIS_PORT", value = "6379" },
         { name = "SPRING_FLYWAY_ENABLED", value = "true" },
+        { name = "SMTP_HOST", value = var.smtp_host },
+        { name = "SMTP_PORT", value = var.smtp_port },
+        { name = "EMAIL_SENDER_ADDRESS", value = var.email_sender_address },
+        { name = "APP_BASE_URL", value = "https://${var.app_domain}" },
+        { name = "PORTAL_BASE_URL", value = "https://${var.portal_domain}" },
+        # heykazi.billing has no-default placeholders — backend fails to boot without these.
+        # /api/* on the public ALB routes to the backend, so the PayFast notify URL base
+        # is the app domain.
+        { name = "HEYKAZI_BASE_URL", value = "https://${var.app_domain}" },
+        { name = "HEYKAZI_FRONTEND_URL", value = "https://${var.app_domain}" },
+        # PayFast public sandbox credentials — not sensitive. Move to Secrets Manager
+        # before enabling real billing in production.
+        { name = "PAYFAST_MERCHANT_ID", value = var.payfast_merchant_id },
+        { name = "PAYFAST_MERCHANT_KEY", value = var.payfast_merchant_key },
+        { name = "PAYFAST_PASSPHRASE", value = var.payfast_passphrase },
+        { name = "PAYFAST_SANDBOX", value = var.payfast_sandbox ? "true" : "false" },
       ]
 
       secrets = [
@@ -119,7 +135,12 @@ resource "aws_ecs_task_definition" "backend" {
         { name = "KEYCLOAK_ADMIN_USERNAME", valueFrom = var.keycloak_admin_username_arn },
         { name = "KEYCLOAK_ADMIN_PASSWORD", valueFrom = var.keycloak_admin_password_arn },
         { name = "KEYCLOAK_CLIENT_SECRET", valueFrom = var.keycloak_client_secret_arn },
-        { name = "REDIS_AUTH_TOKEN", valueFrom = var.redis_auth_token_arn },
+        { name = "PORTAL_JWT_SECRET", valueFrom = var.portal_jwt_secret_arn },
+        { name = "PORTAL_MAGIC_LINK_SECRET", valueFrom = var.portal_magic_link_secret_arn },
+        { name = "SMTP_USERNAME", valueFrom = var.smtp_username_arn },
+        { name = "SMTP_PASSWORD", valueFrom = var.smtp_password_arn },
+        { name = "EMAIL_UNSUBSCRIBE_SECRET", valueFrom = var.email_unsubscribe_secret_arn },
+        { name = "INTEGRATION_ENCRYPTION_KEY", valueFrom = var.integration_encryption_key_arn },
       ]
 
       logConfiguration = {
@@ -211,6 +232,9 @@ resource "aws_ecs_task_definition" "gateway" {
       ]
 
       environment = [
+        # Activates application-production.yml (Redis sessions). Without this the
+        # gateway silently falls back to JDBC sessions.
+        { name = "SPRING_PROFILES_ACTIVE", value = "production" },
         { name = "BACKEND_URL", value = "http://backend.kazi.internal:8080" },
         { name = "KEYCLOAK_ISSUER", value = "https://${var.auth_domain}/realms/${var.keycloak_realm}" },
         { name = "KEYCLOAK_CLIENT_ID", value = "gateway-bff" },
@@ -219,15 +243,15 @@ resource "aws_ecs_task_definition" "gateway" {
         { name = "DB_PORT", value = "5432" },
         { name = "DB_NAME", value = "kazi" },
         { name = "CORS_ALLOWED_ORIGINS", value = "https://${var.app_domain},https://${var.portal_domain}" },
-        { name = "REDIS_HOST", value = var.redis_host },
-        { name = "REDIS_PORT", value = "6379" },
+        # Names must match gateway application-production.yml (spring.data.redis.*)
+        { name = "SPRING_DATA_REDIS_HOST", value = var.redis_host },
       ]
 
       secrets = [
         { name = "KEYCLOAK_CLIENT_SECRET", valueFrom = var.keycloak_client_secret_arn },
         { name = "DB_USER", valueFrom = var.gateway_db_username_arn },
         { name = "DB_PASSWORD", valueFrom = var.gateway_db_password_arn },
-        { name = "REDIS_AUTH_TOKEN", valueFrom = var.redis_auth_token_arn },
+        { name = "SPRING_DATA_REDIS_PASSWORD", valueFrom = var.redis_auth_token_arn },
         { name = "INTERNAL_API_KEY", valueFrom = var.internal_api_key_arn },
       ]
 
@@ -330,7 +354,8 @@ resource "aws_ecs_task_definition" "keycloak" {
 
       environment = [
         { name = "KC_DB", value = "postgres" },
-        { name = "KC_DB_URL", value = "jdbc:postgresql://${var.rds_endpoint}:5432/keycloak" },
+        # Database created manually at provisioning (deployment plan step B5)
+        { name = "KC_DB_URL", value = "jdbc:postgresql://${var.rds_endpoint}:5432/kazi_keycloak" },
         { name = "KC_HOSTNAME", value = var.auth_domain },
         { name = "KC_PROXY_HEADERS", value = "xforwarded" },
         { name = "KC_HEALTH_ENABLED", value = "true" },
