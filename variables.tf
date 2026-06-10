@@ -340,3 +340,9 @@ variable "payfast_sandbox" {
   type        = bool
   default     = true
 }
+
+variable "create_bastion" {
+  description = "Create the SSM bastion (t4g.nano in a private subnet) for DB client access"
+  type        = bool
+  default     = false
+}

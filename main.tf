@@ -310,3 +310,19 @@ module "autoscaling" {
   portal_min_capacity  = 1
   portal_max_capacity  = 2
 }
+
+# -----------------------------------------------------------------------------
+# SSM Bastion (optional — DB client access via Session Manager port forwarding)
+# -----------------------------------------------------------------------------
+
+module "bastion" {
+  source = "./modules/bastion"
+  count  = var.create_bastion ? 1 : 0
+
+  project     = var.project
+  environment = var.environment
+  vpc_id      = module.vpc.vpc_id
+  subnet_id   = module.vpc.private_subnet_ids[0]
+  rds_sg_id   = module.security_groups.rds_sg_id
+  redis_sg_id = module.security_groups.redis_sg_id
+}

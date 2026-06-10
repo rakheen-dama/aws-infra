@@ -47,6 +47,9 @@ autoscaling_max_capacity = 4
 # Compute — Fargate Spot (~70% cheaper; tasks can be reclaimed with 2-min warning)
 use_fargate_spot = true
 
+# SSM bastion for DB client access (DBeaver via Session Manager port forward)
+create_bastion = true
+
 # RDS
 rds_instance_class      = "db.t4g.micro"
 rds_multi_az            = false
