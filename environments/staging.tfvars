@@ -44,6 +44,9 @@ secrets_recovery_window = 7
 autoscaling_min_capacity = 1
 autoscaling_max_capacity = 4
 
+# Compute — Fargate Spot (~70% cheaper; tasks can be reclaimed with 2-min warning)
+use_fargate_spot = true
+
 # RDS
 rds_instance_class      = "db.t4g.micro"
 rds_multi_az            = false

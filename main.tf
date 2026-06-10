@@ -201,9 +201,10 @@ module "alb" {
 module "ecs" {
   source = "./modules/ecs"
 
-  project     = var.project
-  environment = var.environment
-  aws_region  = var.aws_region
+  project          = var.project
+  environment      = var.environment
+  aws_region       = var.aws_region
+  use_fargate_spot = var.use_fargate_spot
 
   # Networking
   vpc_id             = module.vpc.vpc_id
