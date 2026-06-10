@@ -169,6 +169,11 @@ variable "hosted_zone_id" {
   description = "Route 53 hosted zone ID"
   type        = string
   default     = ""
+
+  validation {
+    condition     = !(var.create_dns && var.hosted_zone_id == "")
+    error_message = "hosted_zone_id must be set when create_dns is true. Look it up with: aws route53 list-hosted-zones-by-name --dns-name <domain>"
+  }
 }
 
 # -----------------------------------------------------------------------------
@@ -176,19 +181,19 @@ variable "hosted_zone_id" {
 # -----------------------------------------------------------------------------
 
 variable "app_domain" {
-  description = "Domain name for the main application (e.g., app.binarymash.io)"
+  description = "Domain name for the main application (e.g., app.heykazi.com)"
   type        = string
   default     = ""
 }
 
 variable "portal_domain" {
-  description = "Domain name for the customer portal (e.g., portal.binarymash.io)"
+  description = "Domain name for the customer portal (e.g., portal.heykazi.com)"
   type        = string
   default     = ""
 }
 
 variable "auth_domain" {
-  description = "Domain name for the auth server / Keycloak (e.g., auth.binarymash.io)"
+  description = "Domain name for the auth server / Keycloak (e.g., auth.heykazi.com)"
   type        = string
   default     = ""
 }

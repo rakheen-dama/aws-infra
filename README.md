@@ -35,6 +35,6 @@ terraform apply -var-file=environments/staging.tfvars
 ## Related Repos
 
 - [keycloak-saas](https://github.com/rakheen-dama/keycloak-saas) — Keycloak identity provider (builds Docker image, deploys to ECS)
-- [kazi](https://github.com/heykazi/kazi) — Kazi product (frontend, backend, gateway, portal)
+- [b2b-strawman](https://github.com/rakheen-dama/b2b-strawman) — Kazi product (frontend, backend, gateway, portal)
 
 See [CLAUDE.md](CLAUDE.md) for full architecture details.

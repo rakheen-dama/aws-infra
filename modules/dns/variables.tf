@@ -16,9 +16,8 @@ variable "create_dns" {
 }
 
 variable "domain_name" {
-  description = "Root domain name (e.g., binarymash.io). Wildcard cert covers *.binarymash.io."
+  description = "Root domain name (e.g., heykazi.com). Wildcard cert covers *.<domain_name>."
   type        = string
-  default     = "binarymash.io"
 }
 
 variable "hosted_zone_id" {

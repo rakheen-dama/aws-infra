@@ -1,8 +1,8 @@
 # -----------------------------------------------------------------------------
 # ACM Wildcard Certificate with DNS validation — conditional on var.create_dns
-# Covers: *.binarymash.io (wildcard) + binarymash.io (apex SAN)
-# Both staging subdomains (staging-app.binarymash.io) and production subdomains
-# (app.binarymash.io) are covered by the single wildcard.
+# Covers: *.<domain_name> (wildcard) + <domain_name> (apex SAN)
+# Both staging subdomains (staging-app.*) and production subdomains (app.*)
+# are covered by the single wildcard.
 # -----------------------------------------------------------------------------
 
 resource "aws_acm_certificate" "main" {

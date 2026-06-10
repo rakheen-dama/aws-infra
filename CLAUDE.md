@@ -12,7 +12,7 @@ All AWS infrastructure for the b2mash platform:
 - RDS PostgreSQL 16 (schema-per-tenant multitenancy)
 - ElastiCache Redis (gateway session storage)
 - ECR repositories (one per service)
-- ACM certificates + Route 53 DNS (*.binarymash.io)
+- ACM certificates + Route 53 DNS (*.heykazi.com)
 - Secrets Manager (18 secrets)
 - CloudWatch log groups + alarms + SNS alerts
 - IAM roles (ECS task roles, GitHub Actions OIDC)
@@ -70,7 +70,7 @@ aws-infra/
 
 ## Conventions
 
-- **Naming**: `kazi-{env}-{resource}` for internal, `binarymash-` for customer-facing
+- **Naming**: `kazi-{env}-{resource}` for internal resources, `heykazi.com` for customer-facing domains, `binarymash-` for shared platform resources (state bucket, lock table)
 - **State**: S3 remote (`binarymash-terraform-state`) with DynamoDB locking
 - **Environments**: staging + production via separate tfvars
 - **Secrets**: Placeholder values with `ignore_changes` lifecycle
@@ -89,12 +89,12 @@ Both repos use the GitHub Actions OIDC role provisioned by the IAM module.
 
 | Subdomain | Service | Environment |
 |-----------|---------|-------------|
-| app.binarymash.io | Frontend | Production |
-| auth.binarymash.io | Keycloak | Production |
-| portal.binarymash.io | Portal | Production |
-| staging-app.binarymash.io | Frontend | Staging |
-| staging-auth.binarymash.io | Keycloak | Staging |
-| staging-portal.binarymash.io | Portal | Staging |
+| app.heykazi.com | Frontend | Production |
+| auth.heykazi.com | Keycloak | Production |
+| portal.heykazi.com | Portal | Production |
+| staging-app.heykazi.com | Frontend | Staging |
+| staging-auth.heykazi.com | Keycloak | Staging |
+| staging-portal.heykazi.com | Portal | Staging |
 
 ## Version Constraints
 
