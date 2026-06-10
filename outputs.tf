@@ -217,3 +217,8 @@ output "github_actions_role_arn" {
   description = "ARN of the GitHub Actions IAM role (used in CI/CD workflows)"
   value       = module.iam.github_actions_role_arn
 }
+
+output "bastion_instance_id" {
+  description = "SSM bastion instance ID (null when create_bastion = false)"
+  value       = var.create_bastion ? module.bastion[0].instance_id : null
+}

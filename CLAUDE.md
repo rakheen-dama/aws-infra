@@ -34,6 +34,12 @@ terraform fmt -check -recursive
 
 # Validate
 terraform validate
+
+# DB access via the SSM bastion (requires session-manager-plugin)
+aws ssm start-session --target $(terraform output -raw bastion_instance_id) \
+  --document-name AWS-StartPortForwardingSessionToRemoteHost \
+  --parameters '{"host":["<rds-endpoint>"],"portNumber":["5432"],"localPortNumber":["15432"]}'
+# then connect your DB client to localhost:15432
 ```
 
 Always run `plan` before `apply`. Never apply without reviewing the plan output.
@@ -60,6 +66,7 @@ aws-infra/
 │   ├── dns/                   # Route 53 + ACM certificate
 │   ├── monitoring/            # CloudWatch log groups + alarms
 │   ├── autoscaling/           # ECS auto-scaling policies
+│   ├── bastion/               # SSM bastion (t4g.nano) for DB client access
 │   └── s3/                    # S3 bucket for file storage
 ├── environments/
 │   ├── staging.tfvars
