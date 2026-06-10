@@ -97,3 +97,9 @@ variable "redis_auth_token_secret_arn" {
   description = "ARN of the Redis auth token secret in Secrets Manager"
   type        = string
 }
+
+variable "rds_restore_snapshot_identifier" {
+  description = "Restore the RDS instance from this snapshot at creation (env-up.sh passes the last final snapshot). Empty = fresh database."
+  type        = string
+  default     = ""
+}

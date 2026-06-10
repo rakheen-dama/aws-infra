@@ -8,11 +8,31 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "Target environment for apply"
+        description: "Target environment"
         required: true
         type: choice
         options:
+          - staging
           - production
+      layer:
+        description: "Terraform layer"
+        required: true
+        type: choice
+        options:
+          - runtime
+          - persistent
+      action:
+        description: "Action to run"
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+      confirm:
+        description: 'For destroy: type "destroy-<environment>" to confirm'
+        required: false
+        default: ""
 
 concurrency:
   group: terraform-${{ github.event_name }}
@@ -29,13 +49,28 @@ env:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # Terraform Plan — runs on PRs
+  # Terraform Plan — runs on PRs for both layers (staging)
+  # NOTE: the runtime plan needs the persistent layer applied (its secret data
+  # sources fail otherwise) and AWS_ROLE_ARN configured.
   # ---------------------------------------------------------------------------
   plan:
-    name: Terraform Plan (Staging)
+    name: Plan ${{ matrix.layer }} (staging)
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - layer: persistent
+            workdir: persistent
+            state_key: staging/persistent.tfstate
+          - layer: runtime
+            workdir: .
+            state_key: staging/terraform.tfstate
+    defaults:
+      run:
+        working-directory: ${{ matrix.workdir }}
     steps:
       - uses: actions/checkout@v4
 
@@ -50,7 +85,7 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Terraform Init
-        run: terraform init -backend-config="key=staging/terraform.tfstate"
+        run: terraform init -backend-config="key=${{ matrix.state_key }}"
 
       - name: Terraform Plan
         id: plan
@@ -62,17 +97,20 @@ jobs:
         env:
           ACTOR: ${{ github.actor }}
           EVENT_NAME: ${{ github.event_name }}
+          LAYER: ${{ matrix.layer }}
         with:
           script: |
             const fs = require('fs');
             const planOutput = fs.readFileSync('/tmp/plan-output.txt', 'utf8');
+            const layer = process.env.LAYER;
 
             const maxLength = 60000;
             const truncated = planOutput.length > maxLength
               ? planOutput.substring(0, maxLength) + '\n\n... (truncated)'
               : planOutput;
 
-            const body = `### Terraform Plan (Staging)\n\n\`\`\`\n${truncated}\n\`\`\`\n\n*Pusher: @${process.env.ACTOR}, Action: \`${process.env.EVENT_NAME}\`*`;
+            const heading = `### Terraform Plan — ${layer} (Staging)`;
+            const body = `${heading}\n\n\`\`\`\n${truncated}\n\`\`\`\n\n*Pusher: @${process.env.ACTOR}, Action: \`${process.env.EVENT_NAME}\`*`;
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
@@ -81,7 +119,7 @@ jobs:
             });
 
             const botComment = comments.find(c =>
-              c.user.type === 'Bot' && c.body.includes('### Terraform Plan (Staging)')
+              c.user.type === 'Bot' && c.body.includes(heading)
             );
 
             if (botComment) {
@@ -101,13 +139,13 @@ jobs:
             }
 
   # ---------------------------------------------------------------------------
-  # Terraform Apply (Staging) — auto-apply on merge to main
+  # Apply (Staging) — auto-apply on merge to main: persistent first, then runtime
   # ---------------------------------------------------------------------------
   apply-staging:
-    name: Terraform Apply (Staging)
+    name: Apply staging (persistent then runtime)
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 45
     environment: staging
     steps:
       - uses: actions/checkout@v4
@@ -122,28 +160,49 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Terraform Init
-        run: terraform init -backend-config="key=staging/terraform.tfstate"
+      - name: Apply persistent layer
+        working-directory: persistent
+        run: |
+          terraform init -backend-config="key=staging/persistent.tfstate"
+          terraform apply -auto-approve -var-file=environments/staging.tfvars
 
-      - name: Terraform Apply
-        run: terraform apply -auto-approve -var-file=environments/staging.tfvars
+      - name: Apply runtime layer
+        run: |
+          terraform init -backend-config="key=staging/terraform.tfstate"
+          terraform apply -auto-approve -var-file=environments/staging.tfvars
 
   # ---------------------------------------------------------------------------
-  # Terraform Apply (Production) — manual workflow_dispatch with environment gate
+  # Manual dispatch — plan/apply/destroy a chosen layer + environment.
+  # Destroying the runtime layer is the "environment off switch" (env-down);
+  # apply brings it back, restoring RDS from the final snapshot when one exists.
   # ---------------------------------------------------------------------------
-  apply-production:
-    name: Terraform Apply (Production)
-    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'production'
+  dispatch:
+    name: ${{ inputs.action }} ${{ inputs.layer }} (${{ inputs.environment }})
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    environment: production
+    timeout-minutes: 60
+    environment: ${{ inputs.environment }}
+    env:
+      WORKDIR: ${{ inputs.layer == 'persistent' && 'persistent' || '.' }}
+      STATE_KEY: ${{ inputs.environment }}/${{ inputs.layer == 'persistent' && 'persistent' || 'terraform' }}.tfstate
     steps:
+      - name: Validate destroy confirmation
+        if: inputs.action == 'destroy'
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+          EXPECTED: destroy-${{ inputs.environment }}
+        run: |
+          if [ "$CONFIRM" != "$EXPECTED" ]; then
+            echo "::error::Destroy requires confirm input '$EXPECTED'."
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          role-session-name: GitHubActions-TerraformApplyProduction
+          role-session-name: GitHubActions-TerraformDispatch
           aws-region: ${{ env.AWS_REGION }}
 
       - uses: hashicorp/setup-terraform@v3
@@ -151,10 +210,61 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Terraform Init
-        run: terraform init -backend-config="key=production/terraform.tfstate"
+        working-directory: ${{ env.WORKDIR }}
+        run: terraform init -backend-config="key=${{ env.STATE_KEY }}"
 
-      - name: Terraform Plan
-        run: terraform plan -var-file=environments/production.tfvars -no-color -out=tfplan
+      # Runtime destroy: clear a leftover final RDS snapshot so the destroy's
+      # own final snapshot doesn't collide on the stable name.
+      - name: Clear leftover final snapshot
+        if: inputs.action == 'destroy' && inputs.layer == 'runtime'
+        env:
+          SNAPSHOT_ID: kazi-${{ inputs.environment }}-postgres-final
+        run: |
+          if aws rds describe-db-snapshots --db-snapshot-identifier "$SNAPSHOT_ID" \
+              --query 'DBSnapshots[0].Status' --output text 2>/dev/null | grep -q .; then
+            echo "Deleting leftover snapshot $SNAPSHOT_ID (superseded by the live DB)"
+            aws rds delete-db-snapshot --db-snapshot-identifier "$SNAPSHOT_ID" > /dev/null
+            aws rds wait db-snapshot-deleted --db-snapshot-identifier "$SNAPSHOT_ID"
+          fi
 
-      - name: Terraform Apply
-        run: terraform apply tfplan
+      # Runtime apply: restore from the final snapshot when one exists (env-up)
+      - name: Detect restore snapshot
+        if: inputs.action == 'apply' && inputs.layer == 'runtime'
+        id: restore
+        env:
+          SNAPSHOT_ID: kazi-${{ inputs.environment }}-postgres-final
+        run: |
+          if aws rds describe-db-snapshots --db-snapshot-identifier "$SNAPSHOT_ID" \
+              --query 'DBSnapshots[0].Status' --output text 2>/dev/null | grep -q available; then
+            echo "snapshot=$SNAPSHOT_ID" >> "$GITHUB_OUTPUT"
+          else
+            echo "snapshot=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Terraform ${{ inputs.action }}
+        working-directory: ${{ env.WORKDIR }}
+        env:
+          VAR_FILE: environments/${{ inputs.environment }}.tfvars
+          RESTORE_SNAPSHOT: ${{ steps.restore.outputs.snapshot }}
+          TF_ACTION: ${{ inputs.action }}
+        run: |
+          ARGS=(-var-file="$VAR_FILE")
+          if [ -n "${RESTORE_SNAPSHOT:-}" ]; then
+            ARGS+=(-var "rds_restore_snapshot_identifier=$RESTORE_SNAPSHOT")
+          fi
+          case "$TF_ACTION" in
+            plan)    terraform plan "${ARGS[@]}" ;;
+            apply)   terraform apply -auto-approve "${ARGS[@]}" ;;
+            destroy) terraform destroy -auto-approve "${ARGS[@]}" ;;
+          esac
+
+      # After a successful restore, delete the consumed snapshot so the next
+      # destroy can write a fresh one under the stable name.
+      - name: Delete consumed restore snapshot
+        if: inputs.action == 'apply' && inputs.layer == 'runtime' && steps.restore.outputs.snapshot != ''
+        env:
+          SNAPSHOT_ID: ${{ steps.restore.outputs.snapshot }}
+          DB_ID: kazi-${{ inputs.environment }}-postgres
+        run: |
+          aws rds wait db-instance-available --db-instance-identifier "$DB_ID"
+          aws rds delete-db-snapshot --db-snapshot-identifier "$SNAPSHOT_ID" > /dev/null

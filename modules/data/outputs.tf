@@ -9,8 +9,8 @@ output "rds_port" {
 }
 
 output "rds_master_credentials_secret_arn" {
-  description = "ARN of the RDS master credentials secret in Secrets Manager"
-  value       = aws_db_instance.main.master_user_secret[0].secret_arn
+  description = "ARN of the RDS master credentials secret in Secrets Manager (empty on a restore apply — the next apply re-enables managed rotation)"
+  value       = try(aws_db_instance.main.master_user_secret[0].secret_arn, "")
 }
 
 output "rds_database_name" {
