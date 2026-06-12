@@ -48,8 +48,9 @@ locals {
   portal_image   = var.portal_image != "" ? var.portal_image : "${local.ecr_registry}/${var.project}/portal:${local.image_tag}"
   keycloak_image = var.keycloak_image != "" ? var.keycloak_image : "${local.ecr_registry}/${var.project}/keycloak:${local.image_tag}"
 
-  # App document bucket (modules/s3 in the persistent layer): kazi-<env>
-  s3_bucket_name = "${var.project}-${var.environment}"
+  # App document bucket (modules/s3 in the persistent layer): kazi-<env>-<account>
+  # (account suffix because the bare name is taken globally)
+  s3_bucket_name = "${var.project}-${var.environment}-${data.aws_caller_identity.current.account_id}"
   s3_bucket_arn  = "arn:aws:s3:::${local.s3_bucket_name}"
 }
 
