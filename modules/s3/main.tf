@@ -2,8 +2,12 @@
 # S3 Bucket for document storage
 # -----------------------------------------------------------------------------
 
+# Account-ID suffix: S3 bucket names are GLOBAL — bare kazi-staging is taken
+# by another AWS account (discovered at first apply, 2026-06-13).
+data "aws_caller_identity" "current" {}
+
 resource "aws_s3_bucket" "main" {
-  bucket = "${var.project}-${var.environment}"
+  bucket = "${var.project}-${var.environment}-${data.aws_caller_identity.current.account_id}"
 }
 
 # -----------------------------------------------------------------------------
